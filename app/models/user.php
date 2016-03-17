@@ -190,20 +190,21 @@ $app->post("/api/users/register", function() use($app) {
 	$json = $app->request->post('user');
 	$user = json_decode($json);
 
-	$result = postUser($user->email, $user->password, $user->firstname); // Añadir un User
+	$result = postUser($user->email, $user->password, $user->firstname, $user->alternative_email); // Añadir un User
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function postUser($email, $password, $first) {
+function postUser($email, $password, $first, $alternative) {
 	$result = new Result();
 	try {	
 		$connection = getConnection();
-		$dbquery = $connection->prepare("INSERT INTO User (User_email, User_password, User_firstname, User_apiKey) VALUES(?, sha1(?), ?, ?)");
+		$dbquery = $connection->prepare("INSERT INTO User (User_email, User_password, User_firstname, User_alternativeEmail, User_apiKey) VALUES(?, ?, ?, ?, ?)");
 		$dbquery->bindParam(1, $email);
 		$dbquery->bindParam(2, $password);
 		$dbquery->bindParam(3, $first);
-		$dbquery->bindParam(4, generarApiKey($email)); // Genera Api Key para el usuario
+		$dbquery->bindParam(4, $alternative);
+		$dbquery->bindParam(5, generarApiKey($email)); // Genera Api Key para el usuario
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$connection = null;

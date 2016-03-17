@@ -30,7 +30,7 @@ $app->get("/", function() use($app) {
 	$app->response->headers->set("Content-type", "text/html; charset=utf-8");
 	$app->response->status(OK);
 	$app->response->body(
-	"<h1>RESTful API Classroom Reservation</h1><h2>Enrique Ramos</h2>
+	"<h1>RESTful API OSport Hello</h1><h2>Enrique Ramos</h2>
 	<a href ='doc/index.html'>API Documentation</a>");
 });
 
@@ -119,80 +119,121 @@ include_once("models/trophie.php");
 include_once("models/usertrophies.php");
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// VERIFICATION /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//
+include_once("models/verification.php");
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // EMAIL /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //
 
-$app->post("/api/email(/:apikey)", function($apikey=null) use($app) {
+$app->post("/api/registration", function() use($app) {
 	//get params
-	$json = $app->request->post('email');
-	$email = json_decode($json);
+	$json = $app->request->post('user');
+	$user = json_decode($json);
+	$code = generarApiKey($user->email+"verification_code");
 
-	$result = new Result();
-	$result->setCode(FALSE);
-	$result->setStatus(CONFLICT);
-	$result->setMessage("Invalid Api Key!!");
+	$inserted = postVerificationUser($user->email, $user->password, $user->firstname, $user->alternative_email, $code); // Añadir un User a Verification
+
+	if($inserted == TRUE){
+		$result = sendConfirmationEmail($user->email, $code); // Enviar mail de confirmación de registro
+	}
+	if($inserted == -1){
+		$result = new Result();
+		$result->setCode(FALSE);
+		$result->setMessage("User already exists");
+	}
+	if($inserted == FALSE){
+		$result = new Result();
+		$result->setCode(FALSE);
+		$result->setMessage("Error sending confirmation email");
+	}
 	
-	if(comprobarApiKey($apikey))
-		$result = sendEmail($email->from, $email->passwd, $email->to, $email->subject, $email->message); // Enviar mail
 	$app->response->status($result->getCode());
 	$app->response->body(json_encode($result));
 });
 
-function sendEmail($from, $password, $to, $subject, $message){
+function sendConfirmationEmail($emailAddress, $code){
 	header('Content-type: application/json;charset=utf8');
 	require_once('phpmailer524/class.phpmailer.php');
-	//include("class.smtp.php"); // optional, gets called from within class.phpmailer.php if not already loaded
 	require_once "config.php";
 	$response = new Result();
 
-	$mail = new PHPMailer(true);
-	// the true param means it will throw exceptions on errors, which we need to catch
+	$mail = new PHPMailer(true); // true param means it will throw exceptions on errors
 	$mail->IsSMTP(); // telling the class to use SMTP
 	try {
-		$mail->SMTPDebug = 2;
-		// enables SMTP debug information (for testing)
-		//$mail->SMTPDebug = 0;
 		$mail->SMTPAuth = true;
-		// enable SMTP authentication
 		$mail->SMTPSecure = "tls";
-		// sets the prefix to the server
-		$mail->Host = "outlook.websitewelcome.com";
-		// sets GMAIL as the SMTP server
-		//$mail->Host = "smtp.openmailbox.org";
-		$mail->Port = 587;
-		// set the SMTP port for the GMAIL server
-		$mail->Username = $from;
-		// GMAIL username
-		$mail->Password = $password;
-		// GMAIL password
-		$mail->AddAddress($to);
-		// Receiver email
-		$mail->SetFrom($from, 'Admin.');
-		// email sender
-		$mail->AddReplyTo($from, 'Admin.');
-		// email to reply
-		$mail->Subject = $subject;
-		// subject of the message
-		$mail->AltBody = 'Admin - Incidencias';
-		// optional - MsgHTML will create an alternate automatically
-		$mail->MsgHTML($message);
-		//
+		$mail->Host = "smtp.gmail.com"; // sets GMAIL as the SMTP server
+		$mail->Port = 587; // set the SMTP port for the GMAIL server
+		$mail->Username = "osporthello@gmail.com"; // GMAIL username
+		$mail->Password = "ies29700412"; // GMAIL password
+		$mail->AddAddress($emailAddress); // Receiver email
+		$mail->SetFrom("osporthello@gmail.com"); // email sender
+		$mail->Subject = "Confirm registration in OSport Hello"; // subject of the message
+		//content in HTML
+		$mail->MsgHTML(htmlConfirmButton($emailAddress, $code));
+		//Alternative plain text content (if email client blocks html content)
+		$mail->AltBody = 'Copy this link in your browser to confirm registratiton: https://enriqueramos.info/osporthello/api/verification/'.$emailAddress.'/'.$code;
+		// Send email!
 		$mail->Send();
 		$response->setCode(TRUE);
-		$response->setMessage("Message Sent OK to " . $to);
-		echo json_encode($response);
+		$response->setMessage("Message Sent OK to " . $emailAddress);
 	}	 catch (phpmailerException $e) {
 		$response->setCode(FALSE);
 		$response->setMessage("Error: " . $e->errorMessage());
-		echo json_encode($response);
 	} catch (Exception $e) {
 		$response->setCode(FALSE);
 		$response->setMessage("Error: " . $e->getMessage());
-		echo json_encode($response);
 	}
 
 	return $response;
+}
+
+function htmlConfirmButton($email, $code){
+	$htmlC = 
+	'Click this button to confirm your registration:
+	<table width="100%">
+    <tr>
+      <td>
+        <table border="0" cellpadding="0" cellspacing="0"> 
+          <tr>
+            <td height="20" width="100%" style="font-size: 20px; line-height: 20px;">
+            &nbsp;
+            </td>
+          </tr>
+        </table>
+        <table border="0" align="left" cellpadding="0" cellspacing="0">
+          <tbody>
+          <tr>
+            <td align="left">
+              <table border="0" cellpadding="0" cellspacing="0" width="150">
+                <tr>
+                  <td align="center" bgcolor="#87be45" width="150" style="-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;">
+                    <a href="https://enriqueramos.info/osporthello/api/verification/'.$email.'/'.$code.'" 
+                    style="padding: 10px;width:150px;display: block;text-decoration: none;border:0;text-align: center;font-weight: bold;font-size: 15px;font-family: sans-serif;color: #ffffff;background: #87be45;border: 1px solid #87be45;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;line-height:17px;" class="button_link">
+                    Confirm registration
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <table border="0" cellpadding="0" cellspacing="0"> 
+          <tr>
+            <td height="20" width="100%" style="font-size: 20px; line-height: 20px;">
+            &nbsp;
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>';
+  return $htmlC;
 }
 
 ?>
