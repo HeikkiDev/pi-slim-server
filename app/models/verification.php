@@ -14,7 +14,7 @@ $app->get("/api/verification/:email/:code", function($email, $code) use($app) {
 		}
 	}
 
-	echo $show;
+	echo '<h2>'.$show.'</h2>';
 });
 
 function checkVerification($email, $code){
@@ -53,7 +53,7 @@ function postVerificationUser($email, $password, $first, $alternative, $code) {
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		if ($number > 0) // Ya existe el usuario, no se le permite registro ni verificación
-			return -1;
+			return 2;
 		$connection = null;
 
 		$connection = getConnection();
@@ -68,13 +68,13 @@ function postVerificationUser($email, $password, $first, $alternative, $code) {
 		$number = $dbquery->rowCount();
 		$connection = null;
 		if ($number > 0) {
-			return TRUE;
+			return 1;
 		}	
 		else {	
-			return FALSE;
+			return 3;
 		}
 	} catch (PDOException $e) {
-		return FALSE;
+		return 3;
 	}
 }
 

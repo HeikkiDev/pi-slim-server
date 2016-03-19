@@ -137,15 +137,15 @@ $app->post("/api/registration", function() use($app) {
 
 	$inserted = postVerificationUser($user->email, $user->password, $user->firstname, $user->alternative_email, $code); // Añadir un User a Verification
 
-	if($inserted == TRUE){
+	if($inserted == 1){
 		$result = sendConfirmationEmail($user->email, $code); // Enviar mail de confirmación de registro
 	}
-	if($inserted == -1){
+	if($inserted == 2){
 		$result = new Result();
 		$result->setCode(FALSE);
 		$result->setMessage("User already exists");
 	}
-	if($inserted == FALSE){
+	if($inserted == 3){
 		$result = new Result();
 		$result->setCode(FALSE);
 		$result->setMessage("Error sending confirmation email");
@@ -211,9 +211,9 @@ function htmlConfirmButton($email, $code){
             <td align="left">
               <table border="0" cellpadding="0" cellspacing="0" width="150">
                 <tr>
-                  <td align="center" bgcolor="#87be45" width="150" style="-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;">
+                  <td align="center" bgcolor="#43A047" width="150" style="-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;">
                     <a href="https://enriqueramos.info/osporthello/api/verification/'.$email.'/'.$code.'" 
-                    style="padding: 10px;width:150px;display: block;text-decoration: none;border:0;text-align: center;font-weight: bold;font-size: 15px;font-family: sans-serif;color: #ffffff;background: #87be45;border: 1px solid #87be45;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;line-height:17px;" class="button_link">
+                    style="padding: 10px;width:150px;display: block;text-decoration: none;border:0;text-align: center;font-weight: bold;font-size: 15px;font-family: sans-serif;color: #ffffff;background: #43A047;border: 1px solid #43A047;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;line-height:17px;" class="button_link">
                     Confirm registration
                     </a>
                   </td>
