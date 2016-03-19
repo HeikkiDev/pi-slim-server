@@ -146,23 +146,22 @@ function getUser($user_email) {
 	return $result;
 }
 
-$app->get("/api/users/friends/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+$app->get("/api/users/search/:city/:name(/:apikey)", function($city, $name, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = getFriends($user_id); // Obtener los amigos de un usuario
+		$result = getUsersByName($name, $city); // Buscar usuarios (prioridad en tu ciudad)
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function getFriends($user_email) {
+function getUsersByName($name, $city) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT User_email,User_firstname,User_lastname,User_image FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? )");
-		$dbquery->bindParam(1, $user_email);
+		$dbquery = $connection->prepare("SELECT concat_ws(' ', User_firstname, User_lastname) as user FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,".$city."), User_city");
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
@@ -235,20 +234,66 @@ $app->put("/api/users(/:apikey)", function($apikey=null) use($app) {
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = putUser($user->email, $user->firstname, $user->lastname, $user->image); // Modificar un User
+		$result = putUser($user->email, $user->firstname, $user->lastname, $user->sex, $user->age, $user->city, $user->weight, $user->height); // Modificar un User
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function putUser($email, $first, $last, $image) {
+function putUser($email, $first, $last, $sex, $age, $city, $weight, $height) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("UPDATE User SET User_firstname = ?, User_lastname = ?, User_image = ? WHERE User_email = ?");
+		$dbquery = $connection->prepare("UPDATE User SET User_firstname = ?, User_lastname = ?, User_sex = ?, User_age = ?, User_city = ?, User_weight = ?, User_height = ? WHERE User_email = ?");
 		$dbquery->bindParam(1, $first);
 		$dbquery->bindParam(2, $last);
-		$dbquery->bindParam(3, $image);
-		$dbquery->bindParam(4, $email);
+		$dbquery->bindParam(3, $sex);
+		$dbquery->bindParam(4, $age);
+		$dbquery->bindParam(5, $city);
+		$dbquery->bindParam(6, $weight);
+		$dbquery->bindParam(7, $height);
+		$dbquery->bindParam(8, $email);
+		$dbquery->execute();
+		$number = $dbquery->rowCount();
+		$connection = null;
+		if ($number > 0) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+		}
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("NOT UPDATED");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
+$app->put("/api/users/image(/:apikey)", function($apikey=null) use($app) {
+	//get params
+	$json = $app->request->put('user');
+	$user = json_decode($json);
+
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = putUserImage($user->email, $user->image); // Modificar un User
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function putUserImage($email, $image) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("UPDATE User SET User_image = ? WHERE User_email = ?");
+		$dbquery->bindParam(1, $image);
+		$dbquery->bindParam(2, $email);
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$connection = null;
