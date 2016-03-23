@@ -15,7 +15,7 @@ function getFriends($user_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT User_email,User_firstname,User_lastname,User_image FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? )");
+		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
 		$dbquery->bindParam(1, $user_email);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);

@@ -13,7 +13,7 @@ function userLogin($email, $password){
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT User_email, User_firstname, User_lastname, User_image, User_apiKey FROM User".' WHERE User_email=? AND User_password=sha1(?)');
+		$dbquery = $connection->prepare("SELECT * FROM User".' WHERE User_email=? AND User_password=sha1(?)');
 		$dbquery->bindParam(1, $email);
 		$dbquery->bindParam(2, $password);
 		$dbquery->execute();
@@ -44,17 +44,20 @@ $app->get("/api/users/facebooklogin", function() use($app) {
 	$email = $app->request->get('email');
 	$first_name = $app->request->get('first');
 	$last_name = $app->request->get('last');
+	$sex = $app->request->get('sex');
+	$city = $app->request->get('city');
+	$image = $app->request->get('image');
 
-	$result = userFacebookLogin($email, $first_name, $last_name);
+	$result = userFacebookLogin($email, $first_name, $last_name, $sex, $city, $image);
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function userFacebookLogin($email, $first, $last){
+function userFacebookLogin($email, $first, $last, $sex, $city, $image){
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT User_email, User_firstname, User_lastname, User_image, User_apiKey FROM User".' WHERE User_email=?');
+		$dbquery = $connection->prepare("SELECT * FROM User".' WHERE User_email=?');
 		$dbquery->bindParam(1, $email);
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
@@ -68,17 +71,20 @@ function userFacebookLogin($email, $first, $last){
 		}
 		else{
 			// Si no existe el usuario que ha hecho Login con Facebook, se inserta
-			$dbquery = $connection->prepare("INSERT INTO User (User_email, User_firstname, User_lastname, User_image, User_apiKey) VALUES(?, ?, ?, ?)");
+			$dbquery = $connection->prepare("INSERT INTO User (User_email, User_firstname, User_lastname, User_image, User_sex, User_city, User_apiKey) VALUES(?, ?, ?, ?, ?, ?, ?)");
 			$dbquery->bindParam(1, $email);
 			$dbquery->bindParam(2, $first);
 			$dbquery->bindParam(3, $last);
-			$dbquery->bindParam(4, generarApiKey($email)); // Genera Api Key para el usuario
+			$dbquery->bindParam(4, $image);
+			$dbquery->bindParam(5, $sex);
+			$dbquery->bindParam(6, $city);
+			$dbquery->bindParam(7, generarApiKey($email)); // Genera Api Key para el usuario
 			$dbquery->execute();
 			$number = $dbquery->rowCount();
 			$connection = null;
 			if ($number > 0) {
 				// Se devuelven los datos en $data del usuario insertado
-				$$dbquery = $connection->prepare("SELECT User_email, User_firstname, User_lastname, User_image, User_apiKey FROM User".' WHERE User_email=?');
+				$$dbquery = $connection->prepare("SELECT * FROM User".' WHERE User_email=?');
 				$dbquery->bindParam(1, $email);
 				$dbquery->execute();
 				$number = $dbquery->rowCount();
@@ -161,7 +167,7 @@ function getUsersByName($name, $city) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT concat_ws(' ', User_firstname, User_lastname) as user FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,".$city."), User_city");
+		$dbquery = $connection->prepare("SELECT * FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city");
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
