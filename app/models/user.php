@@ -40,15 +40,11 @@ function userLogin($email, $password){
 	return $result;
 }
 
-$app->get("/api/users/facebooklogin", function() use($app) {
-	$email = $app->request->get('email');
-	$first_name = $app->request->get('first');
-	$last_name = $app->request->get('last');
-	$sex = $app->request->get('sex');
-	$city = $app->request->get('city');
-	$image = $app->request->get('image');
+$app->post("/api/users/facebook", function() use($app) {
+	$json = $app->request->post('user');
+	$user = json_decode($json);
 
-	$result = userFacebookLogin($email, $first_name, $last_name, $sex, $city, $image);
+	$result = userFacebookLogin($user->email, $user->first, $user->last, $user->sex, $user->city, $user->image);
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
@@ -62,7 +58,6 @@ function userFacebookLogin($email, $first, $last, $sex, $city, $image){
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$data = $dbquery->fetchObject();
-		$connection = null;
 		if($number > 0){
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
@@ -81,10 +76,9 @@ function userFacebookLogin($email, $first, $last, $sex, $city, $image){
 			$dbquery->bindParam(7, generarApiKey($email)); // Genera Api Key para el usuario
 			$dbquery->execute();
 			$number = $dbquery->rowCount();
-			$connection = null;
 			if ($number > 0) {
 				// Se devuelven los datos en $data del usuario insertado
-				$$dbquery = $connection->prepare("SELECT * FROM User".' WHERE User_email=?');
+				$dbquery = $connection->prepare("SELECT * FROM User".' WHERE User_email=?');
 				$dbquery->bindParam(1, $email);
 				$dbquery->execute();
 				$number = $dbquery->rowCount();
