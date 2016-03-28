@@ -135,9 +135,15 @@ function deleteChat($user_email, $receiver_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("DELETE FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
+		// Recupero el Id
+		$dbquery = $connection->prepare("SELECT Chat_id FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
 		$dbquery->bindParam(1, $user_email);
-		$dbquery->bindParam(2, $friend_email);
+		$dbquery->bindParam(2, $receiver_email);
+		$dbquery->execute();
+		$chat_id = $dbquery->fetchColumn();
+
+		$dbquery = $connection->prepare("DELETE FROM Chat WHERE Chat_id = ?");
+		$dbquery->bindParam(1, $chat_id);
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$connection = null;
