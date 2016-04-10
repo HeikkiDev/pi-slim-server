@@ -120,18 +120,106 @@ function newChat($user_email, $receiver_email) {
 	return $result;
 }
 
+$app->post("/api/chats/newmessage/:chat_id/:id/:receiverId(/:apikey)", function($chat_id, $user_id, $receiver_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = newMessage($chat_id, $user_id, $receiver_id); // Inserta un nuevo Chat, para el usuario destinatario, si no existe aún
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function newMessage($chat_id, $user_email, $receiver_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT * FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
+		$dbquery->bindParam(1, $receiver_email);
+		$dbquery->bindParam(2, $user_email);
+		$dbquery->execute();
+		$number = $dbquery->rowCount();
+		if ($number < 1) {
+			// Aún no existe este Chat, por tanto el destinatario no sabe que le están hablando aún
+			$dbquery = $connection->prepare("INSERT INTO Chat (Chat_id, Chat_me, Chat_receiver) values(?,?,?)");
+			$dbquery->bindParam(1, $chat_id);
+			$dbquery->bindParam(2, $receiver_email);
+			$dbquery->bindParam(3, $user_email);
+			$dbquery->execute();
+			$number = $dbquery->rowCount();
+
+			if ($number > 0) {
+				$result->setCode(TRUE);
+				$result->setStatus(OK);
+			}
+			else{
+				$result->setCode(FALSE);
+				$result->setStatus(CONFLICT);
+			}
+		}
+		else{
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
 $app->delete("/api/chats/:id/:receiverId(/:apikey)", function($user_id, $receiver_id, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = deleteChat($user_id, $receiver_id); // Borrar un Friend
+		$result = deleteChat($user_id, $receiver_id); // Borrar un Chat
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
 function deleteChat($user_email, $receiver_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("DELETE FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->bindParam(2, $receiver_email);
+		$dbquery->execute();
+		$number = $dbquery->rowCount();
+		$connection = null;
+		if ($number > 0) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+		}
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("NOT DELETED");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
+$app->delete("/api/chats/pair/:id/:receiverId(/:apikey)", function($user_id, $receiver_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = deletePairChat($user_id, $receiver_id); // Borrar una pareja de Chats
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function deletePairChat($user_email, $receiver_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
@@ -141,7 +229,7 @@ function deleteChat($user_email, $receiver_email) {
 		$dbquery->bindParam(2, $receiver_email);
 		$dbquery->execute();
 		$chat_id = $dbquery->fetchColumn();
-
+		// Borrar los dos con ese Id
 		$dbquery = $connection->prepare("DELETE FROM Chat WHERE Chat_id = ?");
 		$dbquery->bindParam(1, $chat_id);
 		$dbquery->execute();
