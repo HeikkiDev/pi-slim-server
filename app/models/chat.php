@@ -54,9 +54,11 @@ function newChat($user_email, $receiver_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT * FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
+		$dbquery = $connection->prepare("SELECT Chat_id FROM Chat WHERE (Chat_me = ? AND Chat_receiver = ?) OR (Chat_me = ? AND Chat_receiver = ?)");
 		$dbquery->bindParam(1, $user_email);
 		$dbquery->bindParam(2, $receiver_email);
+		$dbquery->bindParam(3, $receiver_email);
+		$dbquery->bindParam(4, $user_email);
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		if ($number < 1) {
@@ -101,10 +103,6 @@ function newChat($user_email, $receiver_email) {
 		}
 		else{
 			// Recupero el Id
-			$dbquery = $connection->prepare("SELECT Chat_id FROM Chat WHERE Chat_me = ? AND Chat_receiver = ?");
-			$dbquery->bindParam(1, $user_email);
-			$dbquery->bindParam(2, $receiver_email);
-			$dbquery->execute();
 			$chat_id = $dbquery->fetchColumn();
 
 			$result->setCode(TRUE);

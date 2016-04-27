@@ -146,6 +146,45 @@ function getUser($user_email) {
 	return $result;
 }
 
+$app->get("/api/username/id/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getUser($user_id); // Obtener el nombre de un User
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getUserName($user_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT User_firstname,User_lastname FROM User WHERE User_email = ?");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data = $dbquery->fetchObject();
+		$connection = null;
+
+		if ($data != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+		}	
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the User exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
 $app->get("/api/users/search/:city/:name(/:apikey)", function($city, $name, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
