@@ -146,13 +146,13 @@ function getUser($user_email) {
 	return $result;
 }
 
-$app->get("/api/username/id/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+$app->get("/api/users/name/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = getUser($user_id); // Obtener el nombre de un User
+		$result = getUserName($user_id); // Obtener el nombre de un User
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });

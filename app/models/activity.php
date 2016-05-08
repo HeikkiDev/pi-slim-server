@@ -39,23 +39,25 @@ function getActivity($activity_id) {
 	return $result;
 }
 
-$app->get("/api/activity/:email(/:apikey)", function($user_email, $apikey=null) use($app) {
+$app->get("/api/activity/:email/:page(/:apikey)", function($user_email, $page, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = getUserActivities($user_email); // Obtener todos las Activities de un User
+		$result = getUserActivities($user_email, $page); // Obtener todos las Activities de un User
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function getUserActivities($user_email) {
+function getUserActivities($user_email, $page) {
+	$limit = $page * 10;
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT * FROM Activity WHERE Activity_userEmail = ? ORDER BY Activity_date DESC");
+		$dbquery = $connection->prepare("SELECT *, (SELECT CEILING(count(*)/10) FROM Activity WHERE Activity_userEmail = ?) as TotalPages FROM Activity WHERE Activity_userEmail = ? ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
 		$dbquery->bindParam(1, $user_email);
+		$dbquery->bindParam(2, $user_email);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
@@ -68,7 +70,48 @@ function getUserActivities($user_email) {
 		else {
 			$result->setCode(FALSE);
 			$result->setStatus(NOT_COMPLETED);
-			$result->setMessage("Does the data exist?");
+			$result->setMessage("Does the User Activities exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
+$app->get("/api/activity/friends/:email/:page(/:apikey)", function($user_email, $page, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getFriendsActivities($user_email, $page); // Obtener todos las Activities de los amigos de un User
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getFriendsActivities($user_email, $page) {
+	$limit = $page * 10;
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT *, (SELECT CEILING(count(*)/10) FROM Activity WHERE Activity_userEmail IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?)) as TotalPages FROM Activity WHERE Activity_userEmail IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?) ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->bindParam(2, $user_email);
+		$dbquery->execute();
+		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		$connection = null;
+
+		if ($data != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+		}	
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the Friends Activities exist?");
 		}
 	} catch (PDOException $e) {
 		$result->setCode(FALSE);
@@ -97,7 +140,7 @@ function postActivity($email, $type, $distanceUnits, $speedUnits, $avgSpeed, $di
 		$date = new DateTime();
 		$name = $type.' at '.$date->format('Y-m-d H:i');
 		$dbquery->bindParam(2, $name);
-		$dbquery->bindParam(3, $date);
+		$dbquery->bindParam(3, $date->format('Y-m-d H:i:s'));
 		$dbquery->bindParam(4, $avgSpeed);
 		$dbquery->bindParam(5, $calories);
 		$dbquery->bindParam(6, $duration);
