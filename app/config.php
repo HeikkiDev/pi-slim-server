@@ -25,5 +25,5 @@ class Result {
 	function getData() {return $this->data;}
 	function setData_Aux($s) {$this->data_aux = $s;}
 	function getData_Aux() {return $this->data_aux;}
-
+}
 ?>
