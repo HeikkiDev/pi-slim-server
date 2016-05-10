@@ -185,30 +185,36 @@ function getUserName($user_email) {
 	return $result;
 }
 
-$app->get("/api/users/search/:city/:name(/:apikey)", function($city, $name, $apikey=null) use($app) {
+$app->get("/api/users/search/:city/:name/:email(/:apikey)", function($city, $name, $user_email, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = getUsersByName($name, $city); // Buscar usuarios (prioridad en tu ciudad)
+		$result = getUsersByName($name, $city, $user_email); // Buscar usuarios (prioridad en tu ciudad)
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function getUsersByName($name, $city) {
+function getUsersByName($name, $city, $user_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
 		$dbquery = $connection->prepare("SELECT * FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city");
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+
+		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
 
-		if ($data != null) {
+		if ($data != null && $data_aux != null) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}	
 		else {
 			$result->setCode(FALSE);

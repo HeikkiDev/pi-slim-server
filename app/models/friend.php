@@ -1,6 +1,6 @@
 <?php 
 
-$app->get("/api/friends/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+$app->get("/api/friends/following/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);
 	$result->setStatus(CONFLICT);
@@ -17,6 +17,91 @@ function getFriends($user_email) {
 		$connection = getConnection();
 		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
 		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		$connection = null;
+
+		if ($data != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+		}	
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the data exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
+$app->get("/api/friends/followers/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getFollowers($user_id); // Obtener los followers de un usuario
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getFollowers($user_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_userId FROM Friend WHERE Friend_friendId = ? ) ORDER BY User_firstname");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		
+		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		$connection = null;
+
+		if ($data != null && $data_aux != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+			$result->setData_Aux($data_aux);
+		}
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the data exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
+$app->get("/api/friends/follows_counter/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getFollowsCounter($user_id); // Obtener el número de followers/following
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getFollowsCounter($user_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT count(*) AS Counter FROM Friend WHERE Friend_userId = ? UNION ALL SELECT count(*) AS Counter FROM Friend WHERE Friend_friendId = ?");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->bindParam(2, $user_email);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
