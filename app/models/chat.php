@@ -83,7 +83,7 @@ function newChat($user_email, $receiver_email) {
 				$dbquery->bindParam(3, $user_email);
 				$dbquery->execute();
 				$number = $dbquery->rowCount();
-				$connection = null;
+				
 				if ($number > 0) {
 					$result->setCode(TRUE);
 					$result->setStatus(OK);
@@ -104,6 +104,13 @@ function newChat($user_email, $receiver_email) {
 		else{
 			// Recupero el Id
 			$chat_id = $dbquery->fetchColumn();
+
+			if ($number == 1) {
+				// Inserto el inverso al que ya hay
+				$dbquery = $connection->prepare("INSERT INTO Chat SELECT Chat_id, Chat_receiver, Chat_me FROM Chat WHERE Chat_id = ?");
+				$dbquery->bindParam(1, $chat_id);
+				$dbquery->execute();
+			}
 
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
