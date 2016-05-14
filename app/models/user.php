@@ -44,12 +44,12 @@ $app->post("/api/users/facebook", function() use($app) {
 	$json = $app->request->post('user');
 	$user = json_decode($json);
 
-	$result = userFacebookLogin($user->email, $user->first, $user->last, $user->sex, $user->city, $user->image);
+	$result = userFacebookLogin($user->email, $user->first, $user->last, $user->city, $user->image);
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function userFacebookLogin($email, $first, $last, $sex, $city, $image){
+function userFacebookLogin($email, $first, $last, $city, $image){
 	$result = new Result();
 	try {
 		$connection = getConnection();
@@ -66,14 +66,13 @@ function userFacebookLogin($email, $first, $last, $sex, $city, $image){
 		}
 		else{
 			// Si no existe el usuario que ha hecho Login con Facebook, se inserta
-			$dbquery = $connection->prepare("INSERT INTO User (User_email, User_firstname, User_lastname, User_image, User_sex, User_city, User_apiKey) VALUES(?, ?, ?, ?, ?, ?, ?)");
+			$dbquery = $connection->prepare("INSERT INTO User (User_email, User_firstname, User_lastname, User_image, User_city, User_apiKey) VALUES(?, ?, ?, ?, ?, ?)");
 			$dbquery->bindParam(1, $email);
 			$dbquery->bindParam(2, $first);
 			$dbquery->bindParam(3, $last);
 			$dbquery->bindParam(4, $image);
-			$dbquery->bindParam(5, $sex);
-			$dbquery->bindParam(6, $city);
-			$dbquery->bindParam(7, generarApiKey($email)); // Genera Api Key para el usuario
+			$dbquery->bindParam(5, $city);
+			$dbquery->bindParam(6, generarApiKey($email)); // Genera Api Key para el usuario
 			$dbquery->execute();
 			$number = $dbquery->rowCount();
 			if ($number > 0) {
@@ -279,24 +278,23 @@ $app->put("/api/users(/:apikey)", function($apikey=null) use($app) {
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = putUser($user->email, $user->firstname, $user->lastname, $user->sex, $user->age, $user->city, $user->weight, $user->height); // Modificar un User
+		$result = putUser($user->email, $user->firstname, $user->lastname, $user->age, $user->city, $user->weight, $user->height); // Modificar un User
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function putUser($email, $first, $last, $sex, $age, $city, $weight, $height) {
+function putUser($email, $first, $last, $age, $city, $weight, $height) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("UPDATE User SET User_firstname = ?, User_lastname = ?, User_sex = ?, User_age = ?, User_city = ?, User_weight = ?, User_height = ? WHERE User_email = ?");
+		$dbquery = $connection->prepare("UPDATE User SET User_firstname = ?, User_lastname = ?, User_age = ?, User_city = ?, User_weight = ?, User_height = ? WHERE User_email = ?");
 		$dbquery->bindParam(1, $first);
 		$dbquery->bindParam(2, $last);
-		$dbquery->bindParam(3, $sex);
-		$dbquery->bindParam(4, $age);
-		$dbquery->bindParam(5, $city);
-		$dbquery->bindParam(6, $weight);
-		$dbquery->bindParam(7, $height);
-		$dbquery->bindParam(8, $email);
+		$dbquery->bindParam(3, $age);
+		$dbquery->bindParam(4, $city);
+		$dbquery->bindParam(5, $weight);
+		$dbquery->bindParam(6, $height);
+		$dbquery->bindParam(7, $email);
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$connection = null;

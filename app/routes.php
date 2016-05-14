@@ -41,14 +41,14 @@ $app->get("/restore-password/:email/:code", function($userEmail, $code) use($app
 		$app->response->headers->set("Content-type", "text/html; charset=utf-8");
 		$app->response->status(OK);
 		$app->response->body(
-		'<h1>Formulario de cambio de contraseña!!</h1>
+		'<h1>Formulario de cambio de contraseña</h1>
 
 		 <form action="http://www.enriqueramos.info/osporthello/api/verification/restore-password/'.$userEmail.'/'.$code.'" method="get">
-  			New password:<br>
+  			Nueva contraseña:<br>
   			<input type="password" name="password1" value=""><br>
-  			Repeat new password:<br>
+  			Repite la nueva contraseña:<br>
   			<input type="password" name="password2" value=""><br><br>
-  			<input type="submit" value="Change password">
+  			<input type="submit" value="Cambiar contraseña">
 		</form> 
 		');
 	}
