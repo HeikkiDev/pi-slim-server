@@ -55,17 +55,22 @@ function getUserActivities($user_email, $page) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT *, (SELECT CEILING(count(*)/10) FROM Activity WHERE Activity_userEmail = ?) as TotalPages FROM Activity WHERE Activity_userEmail = ? ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
+		$dbquery = $connection->prepare("SELECT * FROM Activity WHERE Activity_userEmail = ? ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
 		$dbquery->bindParam(1, $user_email);
-		$dbquery->bindParam(2, $user_email);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+
+		$dbquery = $connection->prepare("SELECT CEILING(count(*)/10) AS TotalPages FROM Activity WHERE Activity_userEmail = ?");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchObject();
 		$connection = null;
 
 		if ($data != null) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}	
 		else {
 			$result->setCode(FALSE);
@@ -96,17 +101,22 @@ function getFriendsActivities($user_email, $page) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT *, (SELECT CEILING(count(*)/10) FROM Activity WHERE Activity_userEmail IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?)) as TotalPages FROM Activity WHERE Activity_userEmail IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?) ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
+		$dbquery = $connection->prepare("SELECT * FROM Activity INNER JOIN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?) F ON Activity_userEmail = F.Friend_friendId  ORDER BY Activity_date DESC LIMIT ".$limit.", 10");
 		$dbquery->bindParam(1, $user_email);
-		$dbquery->bindParam(2, $user_email);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+
+		$dbquery = $connection->prepare("SELECT CEILING(count(*)/10) AS TotalPages FROM Activity WHERE Activity_userEmail IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ?)");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchObject();
 		$connection = null;
 
 		if ($data != null) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}	
 		else {
 			$result->setCode(FALSE);
@@ -126,19 +136,19 @@ $app->post("/api/activity/new(/:apikey)", function($apikey=null) use($app) {
 	$json = $app->request->post('sport_data');
 	$activity = json_decode($json);
 
-	$result = postActivity($activity->email, $activity->sportType, $activity->distanceUnits, $activity->speedUnits, $activity->avgSpeed, $activity->distance, $activity->duration, $activity->calories, $activity->geo_points); // Añadir una nueva Acticity
+	$result = postActivity($activity->email, $activity->sportType, $activity->typeName, $activity->distanceUnits, $activity->speedUnits, $activity->avgSpeed, $activity->distance, $activity->duration, $activity->calories, $activity->geo_points); // Añadir una nueva Acticity
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
 
-function postActivity($email, $type, $distanceUnits, $speedUnits, $avgSpeed, $distance, $duration, $calories, $geo_points) {
+function postActivity($email, $type, $typeName, $distanceUnits, $speedUnits, $avgSpeed, $distance, $duration, $calories, $geo_points) {
 	$result = new Result();
 	try {	
 		$connection = getConnection();
 		$dbquery = $connection->prepare("INSERT INTO Activity (Activity_userEmail, Activity_name, Activity_date, Activity_avSpeed, Activity_calories, Activity_duration, Activity_distance, Activity_sportType, Activity_distanceUnits, Activity_speedUnits, Activity_geoPoints) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		$dbquery->bindParam(1, $email);
 		$date = new DateTime();
-		$name = $type.' at '.$date->format('Y-m-d H:i');
+		$name = $typeName.' at '.$date->format('Y-m-d H:i');
 		$dbquery->bindParam(2, $name);
 		$dbquery->bindParam(3, $date->format('Y-m-d H:i:s'));
 		$dbquery->bindParam(4, $avgSpeed);
