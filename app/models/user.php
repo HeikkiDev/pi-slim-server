@@ -238,11 +238,11 @@ function getUsersByName($name, $city, $user_email) {
 	$result = new Result();
 	try {
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT * FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city");
+		$dbquery = $connection->prepare("SELECT User_email,User_firstname,User_lastname,User_city FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city");
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 
-		$dbquery = $connection->prepare("SELECT * FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
+		$dbquery = $connection->prepare("SELECT User_email FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
 		$dbquery->bindParam(1, $user_email);
 		$dbquery->execute();
 		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);

@@ -148,7 +148,7 @@ function postActivity($email, $type, $typeName, $distanceUnits, $speedUnits, $av
 		$dbquery = $connection->prepare("INSERT INTO Activity (Activity_userEmail, Activity_name, Activity_date, Activity_avSpeed, Activity_calories, Activity_duration, Activity_distance, Activity_sportType, Activity_distanceUnits, Activity_speedUnits, Activity_geoPoints) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 		$dbquery->bindParam(1, $email);
 		$date = new DateTime();
-		$name = $typeName.';'.$date->format('Y-m-d H:i');
+		$name = $typeName.';'.$date->format('H:i');
 		$dbquery->bindParam(2, $name);
 		$dbquery->bindParam(3, $date->format('Y-m-d H:i:s'));
 		$dbquery->bindParam(4, $avgSpeed);
