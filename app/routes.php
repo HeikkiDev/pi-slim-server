@@ -159,8 +159,15 @@ $app->get("/api/restore-password/:email", function($userEmail) use($app) {
 
 	$inserted = insertVerificationPassword($userEmail, $code); // Añadir un User a Verification
 
+	// Leo el email de recuperación para este Usuario
+	$connection = getConnection();
+	$dbquery = $connection->prepare("SELECT User_alternativeEmail FROM User WHERE User_email=?");
+	$dbquery->bindParam(1, $userEmail);
+	$dbquery->execute();
+	$recoveryEmail = $dbquery->fetchColumn(0);
+
 	if($inserted == TRUE){
-		$result = sendPasswordEmail($userEmail, $code); // Enviar mail de cambio de password
+		$result = sendPasswordEmail($userEmail, $recoveryEmail, $code); // Enviar mail de cambio de password
 	}
 	else {
 		$result = new Result();
@@ -172,7 +179,7 @@ $app->get("/api/restore-password/:email", function($userEmail) use($app) {
 	$app->response->body(json_encode($result));
 });
 
-function sendPasswordEmail($emailAddress, $code){
+function sendPasswordEmail($emailAddress, $recoveryEmail, $code){
 	header('Content-type: application/json;charset=utf8');
 	require_once('phpmailer524/class.phpmailer.php');
 	require_once "config.php";
@@ -187,17 +194,17 @@ function sendPasswordEmail($emailAddress, $code){
 		$mail->Port = 587; // set the SMTP port for the GMAIL server
 		$mail->Username = "osporthello@gmail.com"; // GMAIL username
 		$mail->Password = "ies29700412"; // GMAIL password
-		$mail->AddAddress($emailAddress); // Receiver email
+		$mail->AddAddress($recoveryEmail); // Receiver email
 		$mail->SetFrom("osporthello@gmail.com"); // email sender
 		$mail->Subject = "Restore your password in OSport Hello"; // subject of the message
 		//content in HTML
 		$mail->MsgHTML(htmlRestorePasswordButton($emailAddress, $code));
 		//Alternative plain text content (if email client blocks html content)
-		$mail->AltBody = 'Copy this link in your browser to restore your password: https://enriqueramos.info/osporthello/api/restore-password/'.$emailAddress.'/'.$code;
+		$mail->AltBody = 'Copy this link in your browser to restore your password: https://enriqueramos.info/osporthello/restore-password/'.$emailAddress.'/'.$code;
 		// Send email!
 		$mail->Send();
 		$response->setCode(TRUE);
-		$response->setMessage("Message Sent OK to " . $emailAddress);
+		$response->setMessage("Message Sent OK to " . $recoveryEmail);
 	}	 catch (phpmailerException $e) {
 		$response->setCode(FALSE);
 		$response->setMessage("Error: " . $e->errorMessage());
