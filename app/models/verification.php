@@ -12,7 +12,7 @@ $app->get("/api/verification/:email/:code", function($email, $code) use($app) {
 		$inserted = postUser($email, $user->User_password, $user->User_firstname, $user->User_alternativeEmail);
 		if($inserted->getCode() == TRUE){
 			deleteVerificationUser($email); // Borramos de la tabla auxiliar Verification
-			$show = "Validación completada. Ahora puede hacer login en la app OSport Hello!";
+			$show = "Validación completada. Ahora puede hacer login en la app OSport!";
 		}
 	}
 

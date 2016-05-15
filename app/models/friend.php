@@ -65,7 +65,7 @@ function getFollowers($user_email) {
 		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
 
-		if ($data != null && $data_aux != null) {
+		if ($data != null) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);

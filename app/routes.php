@@ -196,11 +196,11 @@ function sendPasswordEmail($emailAddress, $recoveryEmail, $code){
 		$mail->Password = "ies29700412"; // GMAIL password
 		$mail->AddAddress($recoveryEmail); // Receiver email
 		$mail->SetFrom("osporthello@gmail.com"); // email sender
-		$mail->Subject = "Restore your password in OSport Hello"; // subject of the message
+		$mail->Subject = utf8_decode("Cambia tu contraseña en OSport"); // subject of the message
 		//content in HTML
 		$mail->MsgHTML(htmlRestorePasswordButton($emailAddress, $code));
 		//Alternative plain text content (if email client blocks html content)
-		$mail->AltBody = 'Copy this link in your browser to restore your password: https://enriqueramos.info/osporthello/restore-password/'.$emailAddress.'/'.$code;
+		$mail->AltBody = 'Copia este enlace en tu navegador para cambiar tu contraseña: https://enriqueramos.info/osporthello/restore-password/'.$emailAddress.'/'.$code;
 		// Send email!
 		$mail->Send();
 		$response->setCode(TRUE);
@@ -218,7 +218,7 @@ function sendPasswordEmail($emailAddress, $recoveryEmail, $code){
 
 function htmlRestorePasswordButton($email, $code){
 	$htmlC = 
-	'Click this button to go to restore password form:
+	'Pulsa este botón para ir al formulario de cambio de contraseña:
 	<table width="100%">
     <tr>
       <td>
@@ -238,7 +238,7 @@ function htmlRestorePasswordButton($email, $code){
                   <td align="center" bgcolor="#43A047" width="150" style="-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;">
                     <a href="https://enriqueramos.info/osporthello/restore-password/'.$email.'/'.$code.'" 
                     style="padding: 10px;width:150px;display: block;text-decoration: none;border:0;text-align: center;font-weight: bold;font-size: 15px;font-family: sans-serif;color: #ffffff;background: #43A047;border: 1px solid #43A047;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;line-height:17px;" class="button_link">
-                    Go to restore password form
+                    Ir a formulario de cambio de contraseña
                     </a>
                   </td>
                 </tr>
@@ -303,11 +303,11 @@ function sendConfirmationEmail($emailAddress, $code){
 		$mail->Password = "ies29700412"; // GMAIL password
 		$mail->AddAddress($emailAddress); // Receiver email
 		$mail->SetFrom("osporthello@gmail.com"); // email sender
-		$mail->Subject = "Confirm registration in OSport Hello"; // subject of the message
+		$mail->Subject = "Confirma tu registro en OSport"; // subject of the message
 		//content in HTML
 		$mail->MsgHTML(htmlConfirmButton($emailAddress, $code));
 		//Alternative plain text content (if email client blocks html content)
-		$mail->AltBody = 'Copy this link in your browser to confirm registratiton: https://enriqueramos.info/osporthello/api/verification/'.$emailAddress.'/'.$code;
+		$mail->AltBody = 'Copia este enlace en tu navegador para confirmar tu registro: https://enriqueramos.info/osporthello/api/verification/'.$emailAddress.'/'.$code;
 		// Send email!
 		$mail->Send();
 		$response->setCode(TRUE);
@@ -325,7 +325,7 @@ function sendConfirmationEmail($emailAddress, $code){
 
 function htmlConfirmButton($email, $code){
 	$htmlC = 
-	'Click this button to confirm your registration:
+	'Pulsa este botón para confirmar tu registro:
 	<table width="100%">
     <tr>
       <td>
@@ -345,7 +345,7 @@ function htmlConfirmButton($email, $code){
                   <td align="center" bgcolor="#43A047" width="150" style="-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;">
                     <a href="https://enriqueramos.info/osporthello/api/verification/'.$email.'/'.$code.'" 
                     style="padding: 10px;width:150px;display: block;text-decoration: none;border:0;text-align: center;font-weight: bold;font-size: 15px;font-family: sans-serif;color: #ffffff;background: #43A047;border: 1px solid #43A047;-moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px;line-height:17px;" class="button_link">
-                    Confirm registration
+                    Confirmar registro
                     </a>
                   </td>
                 </tr>

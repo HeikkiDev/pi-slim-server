@@ -237,8 +237,13 @@ $app->get("/api/users/search/:city/:name/:email(/:apikey)", function($city, $nam
 function getUsersByName($name, $city, $user_email) {
 	$result = new Result();
 	try {
+		$query = "";
+		if($city == "null")
+			$query = "SELECT User_email,User_firstname,User_lastname,User_city FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%'";
+		else
+			$query  = "SELECT User_email,User_firstname,User_lastname,User_city FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city";
 		$connection = getConnection();
-		$dbquery = $connection->prepare("SELECT User_email,User_firstname,User_lastname,User_city FROM User WHERE concat_ws(' ', User_firstname, User_lastname) LIKE '%".$name."%' ORDER BY FIELD(User_city,'".$city."'), User_city");
+		$dbquery = $connection->prepare($query);
 		$dbquery->execute();
 		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 
@@ -248,7 +253,7 @@ function getUsersByName($name, $city, $user_email) {
 		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);
 		$connection = null;
 
-		if ($data != null && $data_aux != null) {
+		if ($data != null) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);
