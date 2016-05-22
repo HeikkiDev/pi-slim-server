@@ -39,12 +39,13 @@ function getUserConfiguration($user_email) {
 	return $result;
 }
 
-$app->post("/api/configuration", function() use($app) {
+$app->post("/api/configuration(/:apikey)", function($apikey=null) use($app) {
 	//get params
 	$json = $app->request->post('userconf');
 	$userconf = json_decode($json);
 
-	$result = postUserConfiguration($userconf->email, $userconf->geosearch, $userconf->geolat, $userconf->geolon, $userconf->sporttype, $userconf->privacitylat, $userconf->privacitylon, $userconf->chatnotifications, $userconf->friendsnotification); // Añadir una Configuración para un Usuario
+	if(comprobarApiKey($apikey))
+		$result = postUserConfiguration($userconf->email, $userconf->geosearch, $userconf->privacity, $userconf->geolat, $userconf->geolon, $userconf->sporttype, $userconf->privacitylat, $userconf->privacitylon, $userconf->chatnotifications, $userconf->friendsnotification); // Añadir una Configuración para un Usuario
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
