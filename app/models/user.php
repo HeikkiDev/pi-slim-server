@@ -269,6 +269,52 @@ function getUsersByName($name, $city, $user_email) {
 	return $result;
 }
 
+$app->get("/api/users/geosearch/:email/:units/:sport(/:apikey)", function($user_email, $units, $sport, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getUsersByProximity($user_email, $units, $sport); // Buscar usuarios por proximidad
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getUsersByProximity($user_email, $units, $sport) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("CALL `GeoSearch` (?, ?, ?)");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->bindParam(2, $units);
+		$dbquery->bindParam(3, $sport);
+		$dbquery->execute();
+		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+
+		$dbquery = $connection->prepare("SELECT User_email FROM User WHERE User_email IN (SELECT Friend_friendId FROM Friend WHERE Friend_userId = ? ) ORDER BY User_firstname");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		$connection = null;
+
+		if ($data != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+		}	
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the data exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
 $app->post("/api/users/register", function() use($app) {
 	//get params
 	$json = $app->request->post('user');

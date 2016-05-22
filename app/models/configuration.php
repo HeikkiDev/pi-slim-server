@@ -50,7 +50,7 @@ $app->post("/api/configuration(/:apikey)", function($apikey=null) use($app) {
 	$app->response->body(json_encode($result));
 });
 
-function postUserConfiguration($email, $geosearch, $geolat, $geolon, $sporttype, $privacitylat, $privacitylon, $chatnotifications, $friendsnotification) {
+function postUserConfiguration($email, $geosearch, $privacity, $geolat, $geolon, $sporttype, $privacitylat, $privacitylon, $chatnotifications, $friendsnotification) {
 	$result = new Result();
 	try {	
 		$connection = getConnection();
@@ -60,7 +60,7 @@ function postUserConfiguration($email, $geosearch, $geolat, $geolon, $sporttype,
 		$number = $dbquery->rowCount();
 
 		if ($number > 0) {
-			$dbquery = $connection->prepare("UPDATE Configuration SET Configuration_geoSearch = ?, Configuration_geoLat = ?, Configuration_geoLon = ?, Configuration_sportType = ?, Configuration_privacityLat = ?, Configuration_privacityLon = ?, Configuration_chatNotifications = ?, Configuration_friendsNotifications = ? WHERE Configuration_userId = ?");
+			$dbquery = $connection->prepare("UPDATE Configuration SET Configuration_geoSearch = ?, Configuration_geoLat = ?, Configuration_geoLon = ?, Configuration_sportType = ?, Configuration_privacityLat = ?, Configuration_privacityLon = ?, Configuration_chatNotifications = ?, Configuration_friendsNotifications = ?, Configuration_privacity = ? WHERE Configuration_userId = ?");
 			$dbquery->bindParam(1, $geosearch);
 			$dbquery->bindParam(2, $geolat);
 			$dbquery->bindParam(3, $geolon);
@@ -69,21 +69,23 @@ function postUserConfiguration($email, $geosearch, $geolat, $geolon, $sporttype,
 			$dbquery->bindParam(6, $privacitylon);
 			$dbquery->bindParam(7, $chatnotifications);
 			$dbquery->bindParam(8, $friendsnotification);
-			$dbquery->bindParam(9, $email);
+			$dbquery->bindParam(9, $privacity);
+			$dbquery->bindParam(10, $email);
 			$dbquery->execute();
 			$number = $dbquery->rowCount();
 		}
 		else{
-			$dbquery = $connection->prepare("INSERT INTO Configuration (Configuration_userId, Configuration_geoSearch, Configuration_geoLat, Configuration_geoLon, Configuration_sportType, Configuration_privacityLat, Configuration_privacityLon, Configuration_chatNotifications, Configuration_friendsNotifications) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)");
+			$dbquery = $connection->prepare("INSERT INTO Configuration (Configuration_userId, Configuration_geoSearch, Configuration_geoLat, Configuration_geoLon, Configuration_sportType, Configuration_privacity, Configuration_privacityLat, Configuration_privacityLon, Configuration_chatNotifications, Configuration_friendsNotifications) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 			$dbquery->bindParam(1, $email);
 			$dbquery->bindParam(2, $geosearch);
 			$dbquery->bindParam(3, $geolat);
 			$dbquery->bindParam(4, $geolon);
 			$dbquery->bindParam(5, $sporttype);
-			$dbquery->bindParam(6, $privacitylat);
-			$dbquery->bindParam(7, $privacitylon);
-			$dbquery->bindParam(8, $chatnotifications);
-			$dbquery->bindParam(9, $friendsnotification);
+			$dbquery->bindParam(6, $privacity);
+			$dbquery->bindParam(7, $privacitylat);
+			$dbquery->bindParam(8, $privacitylon);
+			$dbquery->bindParam(9, $chatnotifications);
+			$dbquery->bindParam(10, $friendsnotification);
 			$dbquery->execute();
 			$number = $dbquery->rowCount();
 		}
