@@ -19,12 +19,19 @@ function userLogin($email, $password){
 		$dbquery->execute();
 		$number = $dbquery->rowCount();
 		$data = $dbquery->fetchObject();
+
+		$dbquery = $connection->prepare("SELECT * FROM Configuration WHERE Configuration_userId = ?");
+		$dbquery->bindParam(1, $email);
+		$dbquery->execute();
+		$data_aux = $dbquery->fetchObject();
 		$connection = null;
+
 		if($number > 0){
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setMessage("Login completed");
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}
 		else{
 			$result->setCode(FALSE);
@@ -59,10 +66,16 @@ function userFacebookLogin($email, $first, $last, $city, $image){
 		$number = $dbquery->rowCount();
 		$data = $dbquery->fetchObject();
 		if($number > 0){
+			$dbquery = $connection->prepare("SELECT * FROM Configuration WHERE Configuration_userId = ?");
+			$dbquery->bindParam(1, $email);
+			$dbquery->execute();
+			$data_aux = $dbquery->fetchObject();
+
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setMessage("Login completed");
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}
 		else{
 			// Si no existe el usuario que ha hecho Login con Facebook, se inserta
@@ -82,12 +95,18 @@ function userFacebookLogin($email, $first, $last, $city, $image){
 				$dbquery->execute();
 				$number = $dbquery->rowCount();
 				$data = $dbquery->fetchObject();
+
+				$dbquery = $connection->prepare("SELECT * FROM Configuration WHERE Configuration_userId = ?");
+				$dbquery->bindParam(1, $email);
+				$dbquery->execute();
+				$data_aux = $dbquery->fetchObject();
 				$connection = null;
 				if($number > 0){
 					$result->setCode(TRUE);
 					$result->setStatus(OK);
 					$result->setMessage("Login completed");
 					$result->setData($data);
+					$result->setData_Aux($data_aux);
 				}
 			}
 			else{
@@ -301,6 +320,7 @@ function getUsersByProximity($user_email, $units, $sport) {
 			$result->setCode(TRUE);
 			$result->setStatus(OK);
 			$result->setData($data);
+			$result->setData_Aux($data_aux);
 		}	
 		else {
 			$result->setCode(FALSE);
