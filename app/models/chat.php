@@ -39,6 +39,45 @@ function getUserChats($user_email) {
 	return $result;
 }
 
+$app->get("/api/chats/check/:id(/:apikey)", function($user_id, $apikey=null) use($app) {
+	$result = new Result();
+	$result->setCode(FALSE);
+	$result->setStatus(CONFLICT);
+	$result->setMessage("Invalid Api Key!!");
+	if(comprobarApiKey($apikey))
+		$result = getCheckChats($user_id); // Obtener todos los Chats de un User
+	$app->response->status($result->getStatus());
+	$app->response->body(json_encode($result));
+});
+
+function getCheckChats($user_email) {
+	$result = new Result();
+	try {
+		$connection = getConnection();
+		$dbquery = $connection->prepare("SELECT Chat_id, Chat_receiver, concat_ws(' ',User_firstname, User_lastname) as Username from User inner join Chat on User_email = Chat_receiver where Chat_me = ?");
+		$dbquery->bindParam(1, $user_email);
+		$dbquery->execute();
+		$data = $dbquery->fetchAll(PDO::FETCH_ASSOC);
+		$connection = null;
+
+		if ($data != null) {
+			$result->setCode(TRUE);
+			$result->setStatus(OK);
+			$result->setData($data);
+		}	
+		else {
+			$result->setCode(FALSE);
+			$result->setStatus(NOT_COMPLETED);
+			$result->setMessage("Does the data exist?");
+		}
+	} catch (PDOException $e) {
+		$result->setCode(FALSE);
+		$result->setStatus(CONFLICT);
+		$result->setMessage("Error: " . $e->getMessage());
+	}
+	return $result;
+}
+
 $app->post("/api/chats/:id/:receiverId(/:apikey)", function($user_id, $receiver_id, $apikey=null) use($app) {
 	$result = new Result();
 	$result->setCode(FALSE);

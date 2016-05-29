@@ -19,7 +19,7 @@ function getSportsPercentageYear($user_email, $year) {
 		$dbquery->bindParam(1, $user_email);
 		$dbquery->bindParam(2, $year);
 		$dbquery->execute();
-		$counter = $query->fetch(PDO::FETCH_ASSOC);
+		$counter = $dbquery->fetch(PDO::FETCH_ASSOC);
 
 		$dbquery = $connection->prepare("SELECT Activity_sportType AS SportType, (COUNT(*)/(?))*100 AS Percentage FROM Activity WHERE Activity_userEmail = ? AND YEAR(Activity_date) = ? GROUP BY Activity_sportType");
 		$dbquery->bindParam(1, $counter['Counter']);
@@ -67,7 +67,7 @@ function getSportsPercentageMonth($user_email, $year, $month) {
 		$dbquery->bindParam(2, $year);
 		$dbquery->bindParam(3, $month);
 		$dbquery->execute();
-		$counter = $query->fetch(PDO::FETCH_ASSOC);
+		$counter = $dbquery->fetch(PDO::FETCH_ASSOC);
 
 		$dbquery = $connection->prepare("SELECT Activity_sportType AS SportType, (COUNT(*)/(?))*100 AS Percentage FROM Activity WHERE Activity_userEmail = ? AND YEAR(Activity_date) = ? AND MONTH(Activity_date) = ? GROUP BY Activity_sportType");
 		$dbquery->bindParam(1, $counter['Counter']);
@@ -150,7 +150,7 @@ $app->get("/api/statistics/:id/:year/:month(/:apikey)", function($user_id, $year
 	$result->setStatus(CONFLICT);
 	$result->setMessage("Invalid Api Key!!");
 	if(comprobarApiKey($apikey))
-		$result = getStatisticsMonth($user_id, $year); // Obtener todos las Estadísticas para un Usuario, mes y año concretos
+		$result = getStatisticsMonth($user_id, $year, $month); // Obtener todos las Estadísticas para un Usuario, mes y año concretos
 	$app->response->status($result->getStatus());
 	$app->response->body(json_encode($result));
 });
